@@ -169,6 +169,7 @@ merge_geocodes <- function(files) {
       
       # Merge with dat
       dat <- left_join(dat, geo_dat, by="v001")
+      attr(dat$v001, "label") <- "Cluster Number"
       
       # Save the data
       saveRDS(dat, paste0("data/merged_dhs/", substr(dta_name, 10, 15), ".rds"))
