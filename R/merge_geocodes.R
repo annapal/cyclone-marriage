@@ -5,7 +5,7 @@
 
 merge_geocodes <- function(files) {
 
-  for (i in 165:nrow(files)) {
+  for (i in 1:nrow(files)) {
     
     # Get file names
     dta_name <- files$dta_file[i]
@@ -124,6 +124,26 @@ merge_geocodes <- function(files) {
       
       dat$v511 <- as.integer(dat$v511)
       attr(dat$v511, "label") <- "Marriage age"
+      
+      # Convert 2 digit dates
+      dat <- dat %>%
+        mutate(
+          v010 = case_when(
+            v010 < 25 ~ 2000 + v010,
+            v010 < 100 ~ 1900 + v010,
+            TRUE ~ v010  # already a full year
+          ),
+          v007 = case_when(
+            v007 < 25 ~ 2000 + v007,
+            v007 < 100 ~ 1900 + v007,
+            TRUE ~ v007  # already a full year
+          ),
+          v508 = case_when(
+            v508 < 25 ~ 2000 + v508,
+            v508 < 100 ~ 1900 + v508,
+            TRUE ~ v508  # already a full year
+          )
+        )
       
       # Convert dates to gregorian calendar where necessary
       if (substr(dat$v000[1], 1, 2)=="ET") {
