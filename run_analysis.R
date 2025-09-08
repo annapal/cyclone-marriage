@@ -10,6 +10,41 @@ dat_all <- dat_all %>% filter(v005_denorm!=0)
 # Create country-year FE
 dat_all$country_year <- paste(dat_all$dhs_cde,  dat_all$year, sep = "_")
 
+# Descriptives ------------------------------------------------------------
+
+nrow(dat_all)
+length(unique(dat_all$v000))
+
+dat_first <- dat_all %>%
+  group_by(caseid) %>%
+  slice(1) %>%
+  ungroup()
+
+# Proportion of sample married before 18
+dat_first %>%
+  group_by(dhs_cde) %>%
+  summarise(
+    prop_under18 = wtd.mean(v511 < 18, weights = v005_denorm, na.rm = TRUE),
+    n = sum(!is.na(v511))
+  )
+
+# Average annual rate
+dat_all %>%
+  group_by(country) %>%
+  summarise(
+    prop_married = wtd.mean(x = as.numeric(married), weights = v005_denorm, na.rm = TRUE),
+    n = sum(!is.na(married)),
+    .groups = "drop"
+  )
+
+# Proportion of person-years exposed
+wtd.mean(dat_all$exp34 == 1, weights = dat_all$v005_denorm, na.rm = TRUE)
+dat_all %>%
+  group_by(dhs_cde) %>%
+  summarise(
+    prop_exp = wtd.mean(exp34 == 1, weights = v005_denorm, na.rm = TRUE),
+    n = sum(!is.na(exp34))
+  )
 
 # Main model --------------------------------------------------------------
 

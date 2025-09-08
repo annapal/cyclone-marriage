@@ -33,9 +33,7 @@ match_geo_df <- function() {
   files <- do.call(rbind, lapply(output, as.data.frame))
   
   # Add excluded surveys here
-  excluded_surveys <- c(
-    "data/dhs/RWPR5ADT/RWPR5AFL.DTA"
-  )
+  excluded_surveys <- c()
   
   # Remove excluded surveys
   files <- files %>%
