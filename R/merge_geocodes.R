@@ -24,10 +24,15 @@ merge_geocodes <- function(files) {
       vars <- c("caseid",
                 "v000", "v001", "v002", "v003", "v005", "v006", "v007", "v008", "v102", 
                 "v009", "v010", "v011", "v012", "v014",
-                "v104", 
+                "v104", "v105a", "v101",
                 "v502", "v507", "v508", "v509", "v510", "v511")
       
-      # Select relevant variables
+      # Select relevant variables & create them if they are missing
+      for (v in vars) {
+        if (!v %in% names(dat)) {
+          dat[[v]] <- NA   # creates the column with NA
+        }
+      }
       dat <- dat %>% select(all_of(vars))
 
       # Re-factor and label variables for consistency across datasets
@@ -92,6 +97,15 @@ merge_geocodes <- function(files) {
       
       dat$v104 <- ifelse(dat$v104>=95, NA, as.numeric(dat$v104))
       attr(dat$v104, "label") <- "Years lived in current place of residence"
+      
+      # Move same region
+      dat <- dat %>%
+        mutate(move_same_region = case_when(
+          is.na(v105a) ~ NA,                  # if v105a is NA → result = NA
+          v105a == v101 ~ TRUE,               # if equal → TRUE
+          v105a != v101 ~ FALSE               # if not equal → FALSE
+        ))
+      dat <- dat %>% select(-v105a, -v101) # remove these variables
       
       dat$v502 <- factor(dat$v502,
                           levels = c(0, 2, 1),

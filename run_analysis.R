@@ -1,7 +1,7 @@
 
 dat_all <- readRDS("data/dat_all.rds")
 
-# Remove some countries from the analysis that have low exposure (<1% of sample)
+# Remove some countries from the analysis that have low exposure (<1% exposed)
 dat_all <- dat_all %>% filter(!(dhs_cde %in% c("CO", "ID", "MW", "PK", "TZ")))
 
 # Remove observations with 0 weight
