@@ -13,12 +13,6 @@ dat_all$country_year <- paste(dat_all$dhs_cde,  dat_all$year, sep = "_")
 
 # Create migration variables ---------------------------------------------
 
-# Take first observation for each person
-# dat_first <- dat_all %>%
-#   group_by(caseid) %>%
-#   slice(1) %>%
-#   ungroup()
-
 # Year & age migrated
 dat_all$migration_year <- dat_all$v007-dat_all$v104
 dat_all$migration_age <- pmax(dat_all$v012-dat_all$v104, 0)
@@ -41,12 +35,15 @@ dat_all <- dat_all %>%
     )
   )
 
-# TODO: How many migrated within the same region
+# Take first observation for each person
+dat_first <- dat_all %>%
+  group_by(caseid) %>%
+  slice(1) %>%
+  ungroup()
 
+prop.table(table(dat_first$migration_timing, useNA="always"))
 
 # Determine if people exposed to TCs migrate more -------------------------
-
-prop.table(table(dat_first$exp34, dat_first$migration_timing, useNA = "always"), margin=1)
 
 # TODO: Model migration as outcome
 dat_all <- dat_all %>%
@@ -69,7 +66,24 @@ mod <- feols(
   vcov   = ~ clustid,
   weights = ~ v005_denorm
 )
-summary(mod)
+
+# Plot the coefficients
+coefs <- broom::tidy(mod)
+country_coefs <- coefs %>%
+  filter(grepl("^dhs_cde::", term)) %>%
+  mutate(country = countrycode(str_extract(term, "(?<=dhs_cde::)[A-Z]{2}(?=:exp34)"),
+                               "dhs", "country.name"))
+ggplot(country_coefs, aes(x = fct_rev(country), y = estimate)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = estimate - std.error*1.96,
+                    ymax = estimate + std.error*1.96),
+                width = 0.2) +
+  coord_flip() +
+  ylim(-0.05, 0.05) +
+  labs(x = "Country",
+       y = "Change in the probability of migration")
+ggsave("figures/migration_coefs.jpg")
+
 
 # Analysis repeated among those who haven't migrated ----------------------
 
@@ -130,7 +144,7 @@ plot <- ggplot(res_clean, aes(x = year, y = estimate, group = country)) +
   ) +
   facet_wrap(~ country, ncol = 4) +
   coord_cartesian(ylim = c(-0.05, 0.05), xlim = c(-0.5, 3.5))
-ggsave("figures/main_migration.jpeg", plot, height = 6, width = 6)
+ggsave("figures/main_migration.jpeg", plot, height = 4.5, width = 6)
 
 
 
