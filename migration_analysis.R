@@ -14,10 +14,10 @@ dat_all$country_year <- paste(dat_all$dhs_cde,  dat_all$year, sep = "_")
 # Create migration variables ---------------------------------------------
 
 # Take first observation for each person
-dat_first <- dat_all %>%
-  group_by(caseid) %>%
-  slice(1) %>%
-  ungroup()
+# dat_first <- dat_all %>%
+#   group_by(caseid) %>%
+#   slice(1) %>%
+#   ungroup()
 
 # Year & age migrated
 dat_all$migration_year <- dat_all$v007-dat_all$v104
@@ -46,9 +46,30 @@ dat_all <- dat_all %>%
 
 # Determine if people exposed to TCs migrate more -------------------------
 
-prop.table(table(dat_all$exp34, dat_all$migration_timing), margin=1)
+prop.table(table(dat_first$exp34, dat_first$migration_timing, useNA = "always"), margin=1)
 
 # TODO: Model migration as outcome
+dat_all <- dat_all %>%
+  mutate(
+    migration = case_when(
+      al_lived==1 ~ 0,
+      migration_year==year ~ 1,
+      migration_year!=year ~ 0,
+      TRUE ~ NA_real_
+    )
+  )
+
+# Run the model
+mod <- feols(
+  migration ~ 
+    i(dhs_cde, exp34) +
+    age |
+    clustid + country_year,
+  data   = dat_all,
+  vcov   = ~ clustid,
+  weights = ~ v005_denorm
+)
+summary(mod)
 
 # Analysis repeated among those who haven't migrated ----------------------
 
