@@ -49,7 +49,12 @@ po/*~
 rsconnect/
 
 # Data
-data/*
+data/dhs/*
+data/geocodes/*
+data/merged_cyclone/*
+data/merged_dhs/*
+data/TC_data/*
+*.rds
 
 # Figures
 *.jpeg
