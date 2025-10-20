@@ -27,7 +27,7 @@ get_descriptives(dat_all)
 # Make table of countries and surveys for SI (saved in results/summary_table.xlsx)
 make_table(dat_all)
 
-# Map TC & child marriage map (saved in figures/)
+# Make TC & child marriage map (saved in figures/)
 plot_windspeed_map()
 plot_child_marriage_map(dat_all)
 
