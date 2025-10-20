@@ -19,7 +19,7 @@ DHS files and TC files are not uploaded, and must be directly downloaded from th
 In order for the code to run, individual recode datasets for all DHS countries must be downloaded in Stata file format and saved under the directory `data/dhs/`. 
 The script `utils/unzip_files.R` may be useful in bulk unzipping all files. DHS GPS data should similarly be downloaded and saved in the directory `data/geocodes/`.
 The file `data/files.csv` should give you an idea of what the file pathways should look like.
-2. The TC data can be downloaded from https://doi.org/10.5880/pik.2017.008. All csv files should be saved in the directory `data/TC_data/`.
+2. The TC data can be downloaded from https://doi.org/10.5880/pik.2017.008. All csv files should be saved in the directory `data/TC_data/`. As a sanity check, the first csv file should have the file path `data/TC_data/1950166N14262_fix2015.csv`.
 3. Once these steps have been completed, run `_run.R` to reproduce the analysis.
 
 Please direct questions/comments/issues to anna.palmer@mail.mcgill.ca.
