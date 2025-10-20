@@ -55,8 +55,3 @@ data/merged_cyclone/*
 data/merged_dhs/*
 data/TC_data/*
 *.rds
-
-# Figures
-*.jpeg
-*.png
-*.jpg
