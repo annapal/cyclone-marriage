@@ -1,3 +1,4 @@
+# Core packages (loaded)
 library(haven)
 library(tidyverse)
 library(writexl)
@@ -7,16 +8,13 @@ library(lubridate)
 library(readxl)
 library(fixest)
 library(broom)
-# library(terra)
-# library(jsonlite)
-# library(gt)
-# library(janitor)
-# library(maps)
-# library(viridis)
-# library(patchwork)
-# library(purrr)
-# library(forcats)
-# library(sjlabelled)
-# library(summarytools)
-# library(Hmisc)
-# library(scales)
+
+# Secondary packages (ensure installed but not loaded)
+extra_pkgs <- c("terra", "sjlabelled", "Hmisc", "maps")
+
+# Check which are missing, then install if needed
+missing_pkgs <- extra_pkgs[!extra_pkgs %in% installed.packages()[, "Package"]]
+if (length(missing_pkgs) > 0) {
+  message("Installing missing packages: ", paste(missing_pkgs, collapse = ", "))
+  install.packages(missing_pkgs)
+}

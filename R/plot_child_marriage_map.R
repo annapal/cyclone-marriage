@@ -1,10 +1,7 @@
 
-plot_child_marriage_map <- function() {
-  
-  dat_all <- readRDS("data/dat_all.rds")
-  
-  # Remove some countries from the analysis that have low exposure (<1% of sample)
-  dat_all <- dat_all %>% filter(!(dhs_cde %in% c("CO", "ID", "MW", "PK", "TZ")))
+# Map of child marriage prevalence
+
+plot_child_marriage_map <- function(dat_all) {
   
   # Take the first observation for each person
   dat_first <- dat_all %>%
@@ -12,21 +9,23 @@ plot_child_marriage_map <- function() {
     slice(1) %>%
     ungroup()
   
-  # Average proportion marriage <18 in each cluster
+  # Average proportion married before 18 in each cluster
   prop_mar <- dat_first %>%
     group_by(clustid, geometry) %>%
     summarise(
       mar_prop = mean(v511<18, na.rm = TRUE)
     )
   
+  # Make into sf object
   merged_prop <- st_as_sf(prop_mar)
-  
   merged_prop <- merged_prop %>%
     arrange(prop_mar)
   
-  world_map <- map("world", fill = TRUE, plot = FALSE)
+  # Get world map
+  world_map <- maps::map("world", fill = TRUE, plot = FALSE)
   world_sf <- st_as_sf(world_map)
   
+  # Make the map
   map_plot <- ggplot(data = world_sf) +
     geom_sf(fill = "gray80", color = "white") +
     geom_sf(data = merged_prop, aes(color = mar_prop), 
@@ -41,7 +40,6 @@ plot_child_marriage_map <- function() {
         barheight = 5
       )
     ) +
-    # coord_sf(xlim = c(-180, 180), ylim = c(-50, 90)) +  # Crop out Antarctica
     theme_minimal() +
     theme(
       legend.position = "inside",
@@ -56,5 +54,7 @@ plot_child_marriage_map <- function() {
       axis.title = element_blank(),
       axis.ticks = element_blank()
     )
+  
+  # Save the map
   ggsave("figures/cluster_map.jpeg", plot = map_plot, height = 5, width = 11)
 }

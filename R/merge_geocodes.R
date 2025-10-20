@@ -1,9 +1,14 @@
 
 # Merge DHS geocodes to survey data
-# Also trim down the survey data to save memory
-# Datasets are saved in data/merged_dhs/
+# Also remove unnecessary variables in the survey data to save memory
+# Datasets are saved in "data/merged_dhs/"
 
 merge_geocodes <- function(files) {
+  
+  # Make save directory if it doesn't exist
+  if (!dir.exists("data/merged_dhs")) {
+    dir.create("data/merged_dhs", recursive = TRUE)
+  }
 
   for (i in 1:nrow(files)) {
     
@@ -11,7 +16,7 @@ merge_geocodes <- function(files) {
     dta_name <- files$dta_file[i]
     geo_name <- files$geo_file[i]
     
-    # If geo data is available
+    # Only proceed if geo data is available
     if (!is.na(geo_name)) {
       
       # Read in dhs dataset
@@ -30,7 +35,7 @@ merge_geocodes <- function(files) {
       # Select relevant variables & create them if they are missing
       for (v in vars) {
         if (!v %in% names(dat)) {
-          dat[[v]] <- NA   # creates the column with NA
+          dat[[v]] <- NA   # creates variable with NA if column is missing
         }
       }
       dat <- dat %>% select(all_of(vars))
@@ -98,14 +103,13 @@ merge_geocodes <- function(files) {
       dat$v104 <- ifelse(dat$v104>=95, NA, as.numeric(dat$v104))
       attr(dat$v104, "label") <- "Years lived in current place of residence"
       
-      # Move same region
       dat <- dat %>%
         mutate(move_same_region = case_when(
-          is.na(v105a) ~ NA,                  # if v105a is NA → result = NA
-          v105a == v101 ~ TRUE,               # if equal → TRUE
-          v105a != v101 ~ FALSE               # if not equal → FALSE
+          is.na(v105a) ~ NA,
+          v105a == v101 ~ TRUE, # Moved, but within same region
+          v105a != v101 ~ FALSE
         ))
-      dat <- dat %>% select(-v105a, -v101) # remove these variables
+      dat <- dat %>% select(-v105a, -v101)
       
       dat$v502 <- factor(dat$v502,
                           levels = c(0, 2, 1),
@@ -139,23 +143,23 @@ merge_geocodes <- function(files) {
       dat$v511 <- as.integer(dat$v511)
       attr(dat$v511, "label") <- "Marriage age"
       
-      # Convert 2 digit dates
+      # Convert 2 digit years to 4 digit
       dat <- dat %>%
         mutate(
           v010 = case_when(
             v010 < 25 ~ 2000 + v010,
             v010 < 100 ~ 1900 + v010,
-            TRUE ~ v010  # already a full year
+            TRUE ~ v010
           ),
           v007 = case_when(
             v007 < 25 ~ 2000 + v007,
             v007 < 100 ~ 1900 + v007,
-            TRUE ~ v007  # already a full year
+            TRUE ~ v007
           ),
           v508 = case_when(
             v508 < 25 ~ 2000 + v508,
             v508 < 100 ~ 1900 + v508,
-            TRUE ~ v508  # already a full year
+            TRUE ~ v508
           )
         )
       

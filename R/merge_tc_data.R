@@ -1,7 +1,11 @@
 
+# Create a stacked raster file using the TC data
+# Tif file saved in "data/cy_stack.tif"
+# Maps for each year 1980-2015 are saved in "figures/cyclone_plots/"
+
 merge_tc_data <- function() {
 
-  # Get DHS countries
+  # Get list of DHS countries
   m_files <- list.files("data/merged_dhs/", full.names = FALSE)
   countries <- countrycode(unique(substr(m_files, 1, 2)), "dhs", "iso3c")
   
@@ -9,75 +13,83 @@ merge_tc_data <- function() {
   files <- list.files("data/TC_data")
   filtered_files <- files[grepl("^(198[0-9]|199[0-9]|200[0-9]|201[0-5])", files)] 
   
-  # Read in the cyclone data
-  cy_dat_all <- data.frame()
-  
-  # Merge into one dataframe
+  # Merge all cyclone data into one dataframe
+  df <- data.frame()
   for (i in seq_along(filtered_files)) {
+    
+    # Only get data from DHS countries
     cy_dat <- read.csv(paste0("data/TC_data/", filtered_files[i])) %>%
       filter(ISO %in% countries)
     if (nrow(cy_dat) > 0) {
       cy_dat$year <- as.numeric(substr(filtered_files[i], 1, 4))
-      cy_dat_all <- rbind(cy_dat_all, cy_dat)
-      message(paste0(i, "/", length(filtered_files)))
+      df <- rbind(df, cy_dat)
     }
   }
   
-  # Create a stacked raster file
-  df <- cy_dat_all
+  # Variables to include in stacked raster file
   vars <- c("exposed_assets", "exposed_pop", "windspeed")
   
-  # 1) derive grid/resolution & template raster (WGS84)
-  r_template <- rast(
+  # Derive grid template raster (WGS84)
+  r_template <- terra::rast(
     xmin = min(df$LON) - 0.1/2, xmax = max(df$LON) + 0.1/2,
     ymin = min(df$LAT) - 0.1/2, ymax = max(df$LAT) + 0.1/2,
     resolution = c(0.1, 0.1), crs = "EPSG:4326"
   )
   
-  # 2) make a SpatVector of points
-  pts <- vect(df, geom = c("LON","LAT"), crs = "EPSG:4326")
+  # Make a SpatVector of points
+  pts <- terra::vect(df, geom = c("LON","LAT"), crs = "EPSG:4326")
   
-  # 3) rasterize each variable per year, stack all layers
-  yrs <- sort(unique(df$year))
+  # Rasterize each variable for every unique year, then combine into one stack
+  yrs <- sort(unique(df$year))  # get sorted list of available years
+  
   layers <- lapply(yrs, function(yy) {
+    # Subset points to the current year
     pyy <- pts[pts$year == yy, ]
+    
+    # Rasterize each variable for this year
     rs <- lapply(vars, function(v) {
-      # if same cell affected multiple times, take max windspeed
-      rasterize(pyy, r_template, field = v, fun = "max") 
+      # Assign cell value as the max of points falling within that cell
+      terra::rasterize(pyy, r_template, field = v, fun = "max")
     })
-    s <- rast(rs)
+    
+    # Combine yearly variable rasters into a multi-layer SpatRaster
+    s <- terra::rast(rs)
     names(s) <- paste0(vars, "_", yy)
     s
   })
-  r_stack <- do.call(c, layers)   # SpatRaster with layers var_year
   
-  # 4) write to disk
-  writeRaster(r_stack, "data/cy_stack.tif", overwrite = TRUE)
+  # Merge all yearly stacks into one multi-layer SpatRaster
+  r_stack <- do.call(c, layers)
   
-  # get country boundaries once
-  world0 <- geodata::world(path = tempdir())  # SpatVector (EPSG:4326)
+  # Save raster file
+  terra::writeRaster(r_stack, "data/cy_stack.tif", overwrite = TRUE)
   
-  years <- 1980:2015
-  for (yr in years) {
-    nm <- paste0("windspeed_", yr)
-    if (!nm %in% names(r_stack)) {
-      message("Skipping ", yr, ": layer ", nm, " not found in r_stack.")
-      next
-    }
+  # Create a plot for each year to check
+  
+  # Get country boundaries
+  world0 <- geodata::world(path = tempdir())
+  
+  # Ensure output dir exists
+  dir.create(file.path("figures", "cyclone_plots"), recursive = TRUE, showWarnings = FALSE)
+  
+  # If world0 is sf/sp object, convert once to SpatVector
+  world <- if (inherits(world0, "SpatVector")) world0 else terra::vect(world0)
+  
+  for (yr in yrs) {
+    # Pick the layer
+    lyr <- r_stack[[paste0("windspeed_", yr)]]
     
-    lyr <- r_stack[[nm]]
+    # Project & crop world to match layer
+    w <- terra::project(world, terra::crs(lyr))
+    w <- terra::crop(w, terra::ext(lyr))
     
-    # project/crop boundaries to match this layer
-    world <- project(world0, crs(lyr))
-    world <- crop(world, ext(lyr))
-    
-    # file name
+    # Filename
     outfile <- file.path("figures", "cyclone_plots", paste0("windspeed_", yr, ".jpg"))
     
-    # save plot
+    # Draw & save
     jpeg(outfile, width = 1600, height = 1200, res = 200)
-    plot(lyr, main = paste0("Windspeed (", yr, ")"))
-    lines(world, lwd = 0.7)
+    terra::plot(lyr, main = paste0("Windspeed (", yr, ")"))
+    terra::lines(w, lwd = 0.7)
     dev.off()
-  }  
+  }
 }

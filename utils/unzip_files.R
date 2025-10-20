@@ -1,5 +1,5 @@
 
-# Unzip all DHS files
+# Unzip files
 
 unzip_files <- function(zip_folder) {
   
@@ -8,16 +8,18 @@ unzip_files <- function(zip_folder) {
   
   # Extract each zip file
   for (zip_file in zip_files) {
+    
     # Create a subfolder for each ZIP file
     folder_name <- tools::file_path_sans_ext(basename(zip_file))
     out_dir <- file.path(zip_folder, folder_name)
     dir.create(out_dir, showWarnings = FALSE)
     
+    # Unzip the files
     unzip(zip_file, exdir = out_dir)
   }
 }
 
-# Set directory containing the zip files
+## Unzip DHS data files and geocodes
 unzip_files("data/dhs")
 unzip_files("data/geocodes")
 

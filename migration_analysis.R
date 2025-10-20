@@ -1,16 +1,4 @@
 
-dat_all <- readRDS("data/dat_all.rds")
-
-# Remove some countries from the analysis that have low exposure (<1% exposed)
-dat_all <- dat_all %>% filter(!(dhs_cde %in% c("CO", "ID", "MW", "PK", "TZ")))
-
-# Remove observations with 0 weight
-dat_all <- dat_all %>% filter(v005_denorm!=0)
-
-# Create country-year FE
-dat_all$country_year <- paste(dat_all$dhs_cde,  dat_all$year, sep = "_")
-
-
 # Create migration variables ---------------------------------------------
 
 # Year & age migrated
