@@ -55,3 +55,4 @@ data/merged_cyclone/*
 data/merged_dhs/*
 data/TC_data/*
 *.rds
+.DS_Store
